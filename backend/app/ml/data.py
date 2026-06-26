@@ -231,6 +231,78 @@ def get_latest_csv(directory: str, prefix: str) -> Optional[str]:
     return max(candidates, key=os.path.getmtime) if candidates else None
 
 
+# =============================================================================
+# Image Feature Extraction (OpenCV)
+# =============================================================================
+
+def extract_image_features(image_path: str) -> np.ndarray:
+    """
+    Extract quantitative features from a blood smear image using OpenCV.
+    Returns a feature vector matching IMAGE_FEATURES.
+    """
+    import cv2
+
+    img = cv2.imread(image_path)
+    if img is None:
+        raise ValueError(f"Could not read image: {image_path}")
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blue_channel = img[:, :, 0]
+    red_channel = img[:, :, 2]
+
+    # 1. Cell count estimate via contour detection
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cell_contours = [c for c in contours if cv2.contourArea(c) > 20]
+    cell_count = len(cell_contours)
+
+    # 2. Cell size statistics
+    cell_sizes = [cv2.contourArea(c) for c in cell_contours] if cell_contours else [0]
+    cell_size_mean = float(np.mean(cell_sizes)) if cell_sizes else 0
+    cell_size_std = float(np.std(cell_sizes)) if len(cell_sizes) > 1 else 0
+
+    # 3. Nucleus-to-cytoplasm ratio (darker regions = nuclei)
+    _, nucleus_thresh = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
+    nucleus_area = np.sum(nucleus_thresh > 0)
+    total_cell_area = np.sum(thresh > 0)
+    nucleus_ratio_mean = nucleus_area / max(total_cell_area, 1)
+
+    # 4. Color intensities
+    blue_intensity = float(np.mean(blue_channel)) / 255.0
+    red_intensity = float(np.mean(red_channel)) / 255.0
+
+    # 5. Texture features
+    texture_contrast = float(gray.std()) / 255.0
+    texture_homogeneity = 1.0 - texture_contrast
+
+    # 6. Blast-like cell percentage
+    blast_like = 0
+    for c in cell_contours:
+        area = cv2.contourArea(c)
+        if area > 50:
+            x, y, w, h = cv2.boundingRect(c)
+            roi = gray[y:y+h, x:x+w]
+            roi_nucleus = np.sum(roi < 80)
+            roi_ratio = roi_nucleus / max(roi.size, 1)
+            if roi_ratio > 0.5:
+                blast_like += 1
+    blast_pct = (blast_like / max(len(cell_contours), 1)) * 100
+
+    return np.array([
+        cell_count,
+        cell_size_mean,
+        min(cell_size_std, 50),
+        nucleus_ratio_mean,
+        0.05,  # nucleus_ratio_std (constant estimate)
+        blue_intensity,
+        red_intensity,
+        texture_contrast,
+        texture_homogeneity,
+        min(blast_pct, 50),
+    ])
+
+
 def dataset_stats(csv_path: str) -> dict:
     """Print and return statistics for a dataset CSV."""
     df = pd.read_csv(csv_path)
