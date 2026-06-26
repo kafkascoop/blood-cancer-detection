@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Message } from 'primereact/message';
+import { Toast } from 'primereact/toast';
 import { Scan } from 'lucide-react';
 import ImageUploader from '../components/ImageUploader';
 import ResultCard from '../components/ResultCard';
@@ -15,6 +16,7 @@ export default function UploadImage() {
   const [result, setResult] = useState<DetectionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const toastRef = useRef<Toast>(null);
 
   const handleSubmit = async () => {
     if (!selectedFile) {
@@ -29,10 +31,12 @@ export default function UploadImage() {
     setLoading(true);
     setError('');
     setResult(null);
+    toastRef.current?.show({ severity: 'info', summary: 'Analyzing...', detail: 'Running AI detection model on image', life: 5000 });
 
     try {
       const data = await uploadImage(selectedFile, patientName);
       setResult(data);
+      toastRef.current?.show({ severity: 'success', summary: 'Analysis Complete', detail: `Result: ${data.prediction}`, life: 5000 });
     } catch {
       const mockResult: DetectionResult = {
         id: `img-${Date.now()}`,
@@ -45,6 +49,7 @@ export default function UploadImage() {
         imageData: { imageUrl: '', fileName: selectedFile.name, fileSize: selectedFile.size },
       };
       setResult(mockResult);
+      toastRef.current?.show({ severity: 'warn', summary: 'Offline Mode', detail: 'Using fallback detection (backend unavailable)', life: 4000 });
     } finally {
       setLoading(false);
     }
@@ -52,6 +57,8 @@ export default function UploadImage() {
 
   return (
     <div className="page">
+      <Toast ref={toastRef} />
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Image Analysis</h1>
@@ -76,9 +83,7 @@ export default function UploadImage() {
 
           <ImageUploader selectedFile={selectedFile} onFileSelect={setSelectedFile} />
 
-          {error && (
-            <Message severity="error" text={error} className="w-full mb-3" />
-          )}
+          {error && <Message severity="error" text={error} className="w-full mb-3" />}
 
           <Button
             label={loading ? 'Analyzing...' : 'Analyze Image'}

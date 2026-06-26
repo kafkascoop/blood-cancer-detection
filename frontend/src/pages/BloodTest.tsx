@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
 import { Message } from 'primereact/message';
+import { Toast } from 'primereact/toast';
 import { ClipboardList } from 'lucide-react';
 import ResultCard from '../components/ResultCard';
 import { predictBloodTest } from '../utils/api';
@@ -15,7 +16,7 @@ const initialForm: BloodTestData = {
   eosinophils: 0, basophils: 0, blastCells: 0,
 };
 
-const fields: { key: keyof BloodTestData; label: string; suffix: string; normalRange: string; min?: number; max?: number; step?: number }[] = [
+const fields: { key: keyof BloodTestData; label: string; suffix: string; normalRange: string; step?: number }[] = [
   { key: 'wbc', label: 'WBC', suffix: '×10³/µL', normalRange: '4.5–11.0', step: 0.1 },
   { key: 'rbc', label: 'RBC', suffix: '×10⁶/µL', normalRange: '4.7–6.1', step: 0.01 },
   { key: 'hemoglobin', label: 'Hemoglobin', suffix: 'g/dL', normalRange: '13.8–17.2', step: 0.1 },
@@ -34,6 +35,7 @@ export default function BloodTest() {
   const [result, setResult] = useState<DetectionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const toastRef = useRef<Toast>(null);
 
   const updateField = (key: keyof BloodTestData, value: number | null) => {
     setForm((prev) => ({ ...prev, [key]: value ?? 0 }));
@@ -48,10 +50,12 @@ export default function BloodTest() {
     setLoading(true);
     setError('');
     setResult(null);
+    toastRef.current?.show({ severity: 'info', summary: 'Analyzing...', detail: 'Running AI model on CBC parameters', life: 5000 });
 
     try {
       const data = await predictBloodTest(form, patientName.trim());
       setResult(data);
+      toastRef.current?.show({ severity: 'success', summary: 'Analysis Complete', detail: `Result: ${data.prediction}`, life: 5000 });
     } catch {
       let prediction: 'Normal' | 'Benign' | 'Malignant';
       if (form.blastCells > 20) prediction = 'Malignant';
@@ -69,6 +73,7 @@ export default function BloodTest() {
         details: form,
       };
       setResult(mockResult);
+      toastRef.current?.show({ severity: 'warn', summary: 'Offline Mode', detail: 'Using fallback detection (backend unavailable)', life: 4000 });
     } finally {
       setLoading(false);
     }
@@ -76,6 +81,8 @@ export default function BloodTest() {
 
   return (
     <div className="page">
+      <Toast ref={toastRef} />
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Blood Test Data</h1>
