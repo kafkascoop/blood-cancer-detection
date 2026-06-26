@@ -56,17 +56,17 @@ export default function UploadImage() {
   };
 
   return (
-    <div className="page">
+    <div className="mx-auto max-w-[1400px]">
       <Toast ref={toastRef} />
 
-      <div className="page-header">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="page-title">Image Analysis</h1>
-          <p className="page-subtitle">Upload microscopic blood smear images for AI-powered detection</p>
+          <h1 className="text-2xl font-bold text-gray-800">Image Analysis</h1>
+          <p className="text-sm text-gray-500 mt-1">Upload microscopic blood smear images for AI-powered detection</p>
         </div>
       </div>
 
-      <div className="upload-page-layout">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <Card className="shadow-sm">
           <h3 className="text-base font-semibold text-gray-700 mb-4">Blood Sample Image</h3>
 
@@ -95,7 +95,7 @@ export default function UploadImage() {
           />
         </Card>
 
-        <div className="result-section">
+        <div className="sticky top-0 self-start">
           {result && <ResultCard result={result} />}
           {!result && !loading && (
             <Card className="shadow-sm">

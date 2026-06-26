@@ -122,11 +122,11 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="page">
-      <div className="page-header">
+    <div className="mx-auto max-w-[1400px]">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Overview of all detection activities</p>
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Overview of all detection activities</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -134,14 +134,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="Total Tests" value={stats.totalTests} icon={Microscope} color="blue" subtitle="All time" trend={{ value: 12, positive: true }} />
         <StatCard title="Normal Results" value={stats.normalResults} icon={Activity} color="emerald" subtitle={`${((stats.normalResults / (stats.totalTests || 1)) * 100).toFixed(1)}% of total`} />
         <StatCard title="Abnormal Detections" value={stats.abnormalDetections} icon={AlertTriangle} color="rose" subtitle="Requires attention" trend={{ value: 8, positive: false }} />
         <StatCard title="Pending Analysis" value={stats.pendingResults} icon={Clock} color="amber" subtitle="Awaiting results" />
       </div>
 
-      <div className="charts-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <Card className="shadow-sm">
           <div className="flex items-center gap-2 mb-4 text-gray-700 font-semibold text-sm">
             <BarChart3 size={18} />

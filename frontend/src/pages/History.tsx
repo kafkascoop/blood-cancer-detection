@@ -79,12 +79,12 @@ export default function History() {
 
   if (selectedResult) {
     return (
-      <div className="page">
+      <div className="mx-auto max-w-[1400px]">
         <Toast ref={toastRef} />
-        <div className="page-header">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="page-title">History</h1>
-            <p className="page-subtitle">Detailed view of detection record</p>
+            <h1 className="text-2xl font-bold text-gray-800">History</h1>
+            <p className="text-sm text-gray-500 mt-1">Detailed view of detection record</p>
           </div>
         </div>
         <Button label="← Back to history" text className="mb-4" onClick={() => setSelectedResult(null)} />
@@ -104,12 +104,12 @@ export default function History() {
   );
 
   return (
-    <div className="page">
+    <div className="mx-auto max-w-[1400px]">
       <Toast ref={toastRef} />
-      <div className="page-header">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="page-title">History</h1>
-          <p className="page-subtitle">Complete record of all detection analyses</p>
+          <h1 className="text-2xl font-bold text-gray-800">History</h1>
+          <p className="text-sm text-gray-500 mt-1">Complete record of all detection analyses</p>
         </div>
       </div>
 

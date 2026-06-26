@@ -22,6 +22,12 @@ const mockResults: DetectionResult[] = [
 
 const predictionSeverity: Record<string, string> = { Normal: 'success', Benign: 'warn', Malignant: 'danger' };
 
+const statusSeverity: Record<string, 'success' | 'warn' | 'danger'> = {
+  completed: 'success',
+  pending: 'warn',
+  failed: 'danger',
+};
+
 export default function Results() {
   const [results] = useState(mockResults);
   const [selectedResult, setSelectedResult] = useState<DetectionResult | null>(null);
@@ -43,10 +49,11 @@ export default function Results() {
   const statusBody = (row: DetectionResult) => (
     <Tag
       value={row.status.charAt(0).toUpperCase() + row.status.slice(1)}
-      severity={row.status === 'completed' ? 'success' : row.status === 'pending' ? 'warn' : 'danger'}
+      severity={statusSeverity[row.status] || 'info'}
       rounded
     />
   );
+
   const actionBody = (row: DetectionResult) => (
     <Button
       icon="pi pi-eye"
@@ -71,12 +78,12 @@ export default function Results() {
 
   if (selectedResult) {
     return (
-      <div className="page">
+      <div className="mx-auto max-w-[1400px]">
         <Toast ref={toastRef} />
-        <div className="page-header">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="page-title">Results</h1>
-            <p className="page-subtitle">Detailed view of detection result</p>
+            <h1 className="text-2xl font-bold text-gray-800">Results</h1>
+            <p className="text-sm text-gray-500 mt-1">Detailed view of detection result</p>
           </div>
         </div>
         <Button label="← Back to results" text className="mb-4" onClick={() => setSelectedResult(null)} />
@@ -100,12 +107,12 @@ export default function Results() {
   }
 
   return (
-    <div className="page">
+    <div className="mx-auto max-w-[1400px]">
       <Toast ref={toastRef} />
-      <div className="page-header">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="page-title">Results</h1>
-          <p className="page-subtitle">View and analyze detection results</p>
+          <h1 className="text-2xl font-bold text-gray-800">Results</h1>
+          <p className="text-sm text-gray-500 mt-1">View and analyze detection results</p>
         </div>
       </div>
 

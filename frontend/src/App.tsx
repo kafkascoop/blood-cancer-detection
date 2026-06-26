@@ -7,7 +7,6 @@ import UploadImage from './pages/UploadImage';
 import BloodTest from './pages/BloodTest';
 import Results from './pages/Results';
 import History from './pages/History';
-import './App.css';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {

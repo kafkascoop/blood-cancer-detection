@@ -3,7 +3,7 @@ import { FileUpload } from 'primereact/fileupload';
 import { CheckCircle2 } from 'lucide-react';
 
 interface ImageUploaderProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (file: File | null) => void;
   selectedFile: File | null;
 }
 
@@ -48,7 +48,7 @@ export default function ImageUploader({ onFileSelect, selectedFile }: ImageUploa
           <button
             className="text-sm text-rose-600 hover:text-rose-700 font-medium"
             onClick={() => {
-              onFileSelect(null as unknown as File);
+              onFileSelect(null);
               uploadRef.current?.clear();
             }}
           >
