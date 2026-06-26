@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@import "primereact/resources/primereact.min.css";
+@import "primeicons/primeicons.css";
+
+/* PrimeReact theme overrides */
+.p-card {
+  @apply shadow-sm rounded-xl border border-gray-200;
+}
+
+.p-card .p-card-title {
+  @apply text-lg font-semibold text-gray-800;
+}
+
+.p-card .p-card-content {
+  @apply p-0;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  @apply bg-gray-50 text-gray-600 font-medium text-sm px-4 py-3 border-b border-gray-200;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  @apply px-4 py-3 text-sm text-gray-700 border-b border-gray-100;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  @apply bg-blue-50/50;
+}
+
+.p-button {
+  @apply rounded-lg font-medium;
+}
+
+.p-tag {
+  @apply rounded-full px-3 py-1 text-xs font-medium;
+}
+
+.p-inputtext {
+  @apply rounded-lg border-gray-300 px-3 py-2 text-sm;
+}
+
+.p-inputtext:focus {
+  @apply border-blue-400 ring-2 ring-blue-100;
+}
+
+.p-menubar {
+  @apply rounded-none border-0 border-b border-gray-200 bg-white px-4 py-2;
+}
+
+.p-panelmenu .p-panelmenu-header-link {
+  @apply rounded-lg px-3 py-2.5 text-sm text-gray-600;
+}
+
+.p-panelmenu .p-panelmenu-header-link:hover {
+  @apply bg-blue-50 text-blue-700;
+}
+
+.p-panelmenu .p-panelmenu-header-link-active {
+  @apply bg-blue-50 text-blue-700 font-medium;
+}
+
+.p-fileupload .p-fileupload-buttonbar {
+  @apply bg-transparent border-0 p-0;
+}
+
+.p-fileupload .p-fileupload-content {
+  @apply border-2 border-dashed border-gray-300 rounded-xl bg-gray-50/50 p-8;
+}
+
+.p-fileupload .p-fileupload-content:hover {
+  @apply border-blue-400 bg-blue-50/30;
+}
+
+.p-fileupload .p-fileupload-row {
+  @apply border-0;
+}
+
+.p-progressbar {
+  @apply rounded-full h-2;
+}
+
+.p-progressbar .p-progressbar-value {
+  @apply bg-blue-500;
+}
+
+.p-chart {
+  @apply w-full;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Transition utilities */
+.transition-fast {
+  transition: all 0.2s ease;
+}
