@@ -116,8 +116,11 @@ def _load_cnn_model() -> Optional[object]:
 # Prediction Functions
 # =============================================================================
 
-def predict_blood_test(data: BloodTestData) -> tuple[str, float]:
+def predict_blood_test(data: BloodTestData | dict) -> tuple[str, float]:
     """Predict blood cancer risk from CBC parameters using RandomForest."""
+    # Accept both BloodTestData objects and plain dicts
+    if isinstance(data, dict):
+        data = BloodTestData.model_validate(data)
     model = _load_blood_test_model()
     if model is None:
         raise RuntimeError("Blood test model not available")
@@ -132,7 +135,7 @@ def predict_blood_test(data: BloodTestData) -> tuple[str, float]:
         class_idx = model.predict(features)[0]
         probabilities = model.predict_proba(features)[0]
         confidence = float(probabilities[class_idx])
-        label = ["Normal", "Benign", "Malignant"][class_idx]
+        label = ["Normal", "Leukemia", "Lymphoma", "Myeloma"][class_idx]
         return label, round(confidence, 4)
     except Exception as e:
         logger.error(f"Blood test prediction failed: {e}")
@@ -152,7 +155,7 @@ def predict_from_image_file(image_path: str) -> tuple[str, float]:
         class_idx = model.predict(features_df)[0]
         probabilities = model.predict_proba(features_df)[0]
         confidence = float(probabilities[class_idx])
-        label = ["Normal", "Benign", "Malignant"][class_idx]
+        label = ["Normal", "Leukemia", "Lymphoma", "Myeloma"][class_idx]
         return label, round(confidence, 4)
     except Exception as e:
         logger.error(f"Image prediction failed: {e}")
@@ -182,7 +185,7 @@ def predict_from_image_cnn(image_path: str) -> tuple[str, float]:
         probs = model.predict(img_array, verbose=0)[0]
         class_idx = int(np.argmax(probs))
         confidence = float(probs[class_idx])
-        label = ["Normal", "Benign", "Malignant"][class_idx]
+        label = ["Normal", "Leukemia", "Lymphoma", "Myeloma"][class_idx]
         return label, round(confidence, 4)
     except Exception as e:
         logger.error(f"CNN prediction failed: {e}")

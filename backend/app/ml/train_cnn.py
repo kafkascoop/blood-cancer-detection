@@ -2,11 +2,10 @@
 CNN Model Training Module for HematoScan.
 
 Trains a Convolutional Neural Network on blood smear images for
-cancer classification (Normal / Benign / Malignant).
+blood cancer classification (Normal / Leukemia / Lymphoma / Myeloma).
 
 Requirements:
-    pip install tensorflow         (requires Python < 3.13)
-    pip install torch torchvision  (alternative)
+    pip install tensorflow
 
 Usage:
     python -m app.ml.train_cnn --data-dir ./data/images --epochs 50
@@ -19,9 +18,9 @@ import numpy as np
 from typing import Optional
 
 # ---------------------------------------------------------------------------
-# Conditional import so the app doesn't crash if TF/PyTorch isn't installed
+# Conditional import so the app doesn't crash if TF isn't installed
 # ---------------------------------------------------------------------------
-BACKEND: Optional[str] = None  # "tensorflow" or "pytorch"
+BACKEND: Optional[str] = None
 
 try:
     import tensorflow as tf
@@ -46,13 +45,68 @@ try:
 except ImportError:
     _HAS_PT = False
 
-CLASS_LABELS = ["Normal", "Benign", "Malignant"]
-NUM_CLASSES = 3
+CLASS_LABELS = ["Normal", "Leukemia", "Lymphoma", "Myeloma"]
+NUM_CLASSES = 4
 IMG_SIZE = 224  # standard input size for CNNs
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 CNN_MODEL_PATH_TF = os.path.join(MODELS_DIR, "cnn_image_model.keras")
-CNN_MODEL_PATH_PT = os.path.join(MODELS_DIR, "cnn_image_model.pt")
+
+
+# =============================================================================
+# Data Loading (modern tf.data API — no deprecated ImageDataGenerator)
+# =============================================================================
+
+def _load_dataset(data_dir: str, batch_size: int, shuffle: bool = True,
+                  normalize: bool = True):
+    """Load images from a directory structure using image_dataset_from_directory.
+
+    Expects subdirectories: Normal/, Leukemia/, Lymphoma/, Myeloma/.
+    When normalize=True, scales pixels to [0, 1].
+    When normalize=False, keeps raw uint8 [0, 255] (needed for pretrained models
+    that use preprocess_input internally).
+    """
+    AUTOTUNE = tf.data.AUTOTUNE
+
+    ds = tf.keras.utils.image_dataset_from_directory(
+        data_dir,
+        labels="inferred",
+        label_mode="categorical",
+        class_names=CLASS_LABELS,
+        image_size=(IMG_SIZE, IMG_SIZE),
+        batch_size=batch_size,
+        shuffle=shuffle,
+        seed=42,
+    )
+
+    if normalize:
+        # Scale to [0, 1] for scratch-trained models
+        ds = ds.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y),
+                    num_parallel_calls=AUTOTUNE)
+    else:
+        # Cast to float32 but keep [0, 255] for pretrained models
+        # (preprocess_input handles the scaling)
+        ds = ds.map(lambda x, y: (tf.cast(x, tf.float32), y),
+                    num_parallel_calls=AUTOTUNE)
+
+    return ds.prefetch(buffer_size=AUTOTUNE)
+
+
+def _augment_dataset(ds):
+    """Apply data augmentation using Keras layers (not deprecated ImageDataGenerator)."""
+    AUTOTUNE = tf.data.AUTOTUNE
+    augmentation = keras.Sequential([
+        layers.RandomRotation(0.15),
+        layers.RandomTranslation(0.1, 0.1),
+        layers.RandomZoom(0.15),
+        layers.RandomFlip("horizontal"),
+        layers.RandomContrast(0.1),
+    ])
+
+    def augment(x, y):
+        return augmentation(x, training=True), y
+
+    return ds.map(augment, num_parallel_calls=AUTOTUNE).prefetch(AUTOTUNE)
 
 
 # =============================================================================
@@ -60,12 +114,11 @@ CNN_MODEL_PATH_PT = os.path.join(MODELS_DIR, "cnn_image_model.pt")
 # =============================================================================
 
 def _build_tf_cnn(input_shape=(IMG_SIZE, IMG_SIZE, 3)) -> keras.Model:
-    """Build a lightweight CNN for blood cell classification."""
+    """Build a lightweight CNN for blood cell classification (expects [0,1] input)."""
     inputs = keras.Input(shape=input_shape, name="image")
 
     # Block 1
-    x = layers.Rescaling(1.0 / 255)(inputs)
-    x = layers.Conv2D(32, (3, 3), padding="same")(x)
+    x = layers.Conv2D(32, (3, 3), padding="same")(inputs)
     x = layers.BatchNormalization()(x)
     x = layers.ReLU()(x)
     x = layers.MaxPooling2D((2, 2))(x)
@@ -100,7 +153,11 @@ def _build_tf_cnn(input_shape=(IMG_SIZE, IMG_SIZE, 3)) -> keras.Model:
 
 
 def _build_tf_pretrained(input_shape=(IMG_SIZE, IMG_SIZE, 3)) -> keras.Model:
-    """Build a model using MobileNetV2 transfer learning."""
+    """Build a model using MobileNetV2 transfer learning (expects [0,255] input).
+
+    MobileNetV2's preprocess_input handles scaling to [-1, 1], so the data
+    loader should NOT divide by 255 when using this model.
+    """
     base = applications.MobileNetV2(
         input_shape=input_shape,
         include_top=False,
@@ -109,7 +166,7 @@ def _build_tf_pretrained(input_shape=(IMG_SIZE, IMG_SIZE, 3)) -> keras.Model:
     base.trainable = False  # freeze base
 
     inputs = keras.Input(shape=input_shape)
-    x = applications.mobilenet_v2.preprocess_input(inputs)
+    x = applications.mobilenet_v2.preprocess_input(inputs)  # expects [0,255]
     x = base(x, training=False)
     x = layers.GlobalAveragePooling2D()(x)
     x = layers.Dense(256, activation="relu")(x)
@@ -131,71 +188,59 @@ def train_tf_cnn(
 ):
     """Train the TensorFlow CNN on blood cell images.
 
-    Expects subdirectories: Normal/, Benign/, Malignant/ inside train_dir.
+    Uses the modern tf.data API (not deprecated ImageDataGenerator).
+    Expects subdirectories: Normal/, Leukemia/, Lymphoma/, Myeloma/ inside train_dir.
+
+    For pretrained models, images are NOT divided by 255 because
+    MobileNetV2's preprocess_input handles normalization internally.
     """
     if not _HAS_TF:
-        print("❌ TensorFlow is not installed. Run: pip install tensorflow (requires Python < 3.13)")
+        print("❌ TensorFlow is not installed. Run: pip install tensorflow")
         return
 
     print(f"\n{'='*60}")
     print("🧠 Training CNN (TensorFlow/Keras)")
     print(f"   Backend: {BACKEND}")
     print(f"   Device:  {'GPU' if len(tf.config.list_physical_devices('GPU')) > 0 else 'CPU'}")
+    print(f"   Model:   {'MobileNetV2 (pretrained)' if use_pretrained else 'Scratch CNN'}")
     print(f"{'='*60}\n")
 
-    # Data augmentation for training
-    train_datagen = keras.preprocessing.image.ImageDataGenerator(
-        rescale=1.0 / 255,
-        rotation_range=20,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        zoom_range=0.15,
-        horizontal_flip=True,
-        fill_mode="nearest",
-        validation_split=0.2 if val_dir is None else 0,
-    )
+    # Pretrained models need [0, 255] input (preprocess_input handles scaling)
+    should_normalize = not use_pretrained
 
     if val_dir:
-        # Separate validation directory provided
-        train_gen = train_datagen.flow_from_directory(
-            train_dir,
-            target_size=(IMG_SIZE, IMG_SIZE),
-            batch_size=batch_size,
-            class_mode="categorical",
-            classes=CLASS_LABELS,
-            shuffle=True,
+        train_ds = _augment_dataset(
+            _load_dataset(train_dir, batch_size, shuffle=True, normalize=should_normalize)
         )
-        val_gen = keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255).flow_from_directory(
-            val_dir,
-            target_size=(IMG_SIZE, IMG_SIZE),
-            batch_size=batch_size,
-            class_mode="categorical",
-            classes=CLASS_LABELS,
-            shuffle=False,
-        )
+        val_ds = _load_dataset(val_dir, batch_size, shuffle=False, normalize=should_normalize)
     else:
-        # Split from training directory
-        train_gen = train_datagen.flow_from_directory(
-            train_dir,
-            target_size=(IMG_SIZE, IMG_SIZE),
-            batch_size=batch_size,
-            class_mode="categorical",
-            classes=CLASS_LABELS,
-            subset="training",
-            shuffle=True,
-        )
-        val_gen = train_datagen.flow_from_directory(
-            train_dir,
-            target_size=(IMG_SIZE, IMG_SIZE),
-            batch_size=batch_size,
-            class_mode="categorical",
-            classes=CLASS_LABELS,
-            subset="validation",
-            shuffle=False,
-        )
+        full_ds = _load_dataset(train_dir, batch_size, shuffle=True, normalize=should_normalize)
+        total_samples = sum(1 for _ in full_ds.unbatch())
+        print(f"   Total samples in directory: {total_samples}")
 
-    print(f"\n   Training samples: {train_gen.samples}")
-    print(f"   Validation samples: {val_gen.samples}")
+        full_ds = full_ds.unbatch().shuffle(10000, seed=42)
+        val_size = int(total_samples * 0.2)
+
+        val_ds = full_ds.take(val_size).batch(batch_size)
+        train_raw = full_ds.skip(val_size).batch(batch_size)
+
+        val_ds = val_ds.prefetch(tf.data.AUTOTUNE)
+        train_ds = _augment_dataset(train_raw)
+
+    # Get class names from directory structure (separate call to avoid consuming the dataset)
+    class_names = tf.keras.utils.image_dataset_from_directory(
+        train_dir,
+        labels="inferred",
+        class_names=CLASS_LABELS,
+        image_size=(IMG_SIZE, IMG_SIZE),
+        batch_size=1,
+        shuffle=False,
+        seed=42,
+    ).class_names
+
+    print(f"   Classes detected: {class_names}")
+    print(f"   Training samples: {sum(1 for _ in train_ds.unbatch())}")
+    print(f"   Validation samples: {sum(1 for _ in val_ds.unbatch())}")
 
     # Build model
     model = _build_tf_pretrained() if use_pretrained else _build_tf_cnn()
@@ -215,8 +260,8 @@ def train_tf_cnn(
     ]
 
     history = model.fit(
-        train_gen,
-        validation_data=val_gen,
+        train_ds,
+        validation_data=val_ds,
         epochs=epochs,
         callbacks=cb,
         verbose=1,
@@ -276,20 +321,23 @@ def has_deep_learning() -> bool:
 
 def main():
     parser = argparse.ArgumentParser(description="HematoScan CNN Training")
-    parser.add_argument("--data-dir", type=str, required=True, help="Path to image directory (subdirs: Normal, Benign, Malignant)")
-    parser.add_argument("--val-dir", type=str, default=None, help="Optional separate validation directory")
+    parser.add_argument("--data-dir", type=str, required=True,
+                        help="Path to image directory (subdirs: Normal, Leukemia, Lymphoma, Myeloma)")
+    parser.add_argument("--val-dir", type=str, default=None,
+                        help="Optional separate validation directory")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=32, help="Batch size")
-    parser.add_argument("--pretrained", action="store_true", help="Use MobileNetV2 transfer learning")
-    parser.add_argument("--backend", choices=["tensorflow", "pytorch"], default="tensorflow", help="Deep learning backend")
+    parser.add_argument("--pretrained", action="store_true",
+                        help="Use MobileNetV2 transfer learning")
+    parser.add_argument("--backend", choices=["tensorflow", "pytorch"],
+                        default="tensorflow", help="Deep learning backend")
 
     args = parser.parse_args()
 
     if not _HAS_TF and not _HAS_PT:
         print("❌ No deep learning framework found.")
-        print("   Install TensorFlow or PyTorch:")
-        print("   pip install tensorflow        (Python < 3.13)")
-        print("   pip install torch torchvision")
+        print("   Install TensorFlow:")
+        print("   pip install tensorflow")
         sys.exit(1)
 
     if args.backend == "tensorflow" and _HAS_TF:

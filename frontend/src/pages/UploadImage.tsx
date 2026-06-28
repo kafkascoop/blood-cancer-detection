@@ -54,8 +54,8 @@ export default function UploadImage() {
         timestamp: new Date().toISOString(),
         type: "image",
         patientName,
-        prediction: (["Normal", "Benign", "Malignant"] as const)[
-          Math.floor(Math.random() * 3)
+        prediction: (["Normal", "Leukemia", "Lymphoma", "Myeloma"] as const)[
+          Math.floor(Math.random() * 4)
         ],
         confidence: 0.85 + Math.random() * 0.14,
         status: "completed",

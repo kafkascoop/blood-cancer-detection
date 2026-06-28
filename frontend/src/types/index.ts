@@ -22,7 +22,7 @@ export interface DetectionResult {
   timestamp: string;
   type: 'image' | 'blood_test';
   patientName: string;
-  prediction: 'Normal' | 'Benign' | 'Malignant';
+  prediction: 'Normal' | 'Leukemia' | 'Lymphoma' | 'Myeloma';
   confidence: number;
   status: 'completed' | 'pending' | 'failed';
   details?: BloodTestData | null;
@@ -38,4 +38,4 @@ export interface DashboardStats {
   monthlyTests: number[];
 }
 
-export type PredictionColor = 'emerald' | 'amber' | 'rose' | 'slate';
+export type PredictionColor = 'emerald' | 'violet' | 'amber' | 'rose' | 'slate';

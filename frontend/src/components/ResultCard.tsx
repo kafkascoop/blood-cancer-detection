@@ -29,29 +29,41 @@ const predictionConfig = {
     text: 'text-emerald-700',
     dot: 'bg-emerald-500',
   },
-  Benign: {
-    icon: AlertTriangle,
-    color: 'amber',
-    label: 'Benign',
-    description: 'Non-cancerous growth detected',
-    gradient: 'from-amber-500 to-amber-600',
-    lightBg: 'bg-amber-50',
-    border: 'border-amber-200',
-    ring: 'ring-amber-500/20',
-    text: 'text-amber-700',
-    dot: 'bg-amber-500',
-  },
-  Malignant: {
+  Leukemia: {
     icon: XCircle,
     color: 'rose',
-    label: 'Malignant',
-    description: 'Cancerous cells detected — further investigation required',
+    label: 'Leukemia',
+    description: 'Acute/chronic leukemia detected — blast cells present',
     gradient: 'from-rose-500 to-rose-600',
     lightBg: 'bg-rose-50',
     border: 'border-rose-200',
     ring: 'ring-rose-500/20',
     text: 'text-rose-700',
     dot: 'bg-rose-500',
+  },
+  Lymphoma: {
+    icon: AlertTriangle,
+    color: 'violet',
+    label: 'Lymphoma',
+    description: 'Hodgkin/Non-Hodgkin lymphoma suspected',
+    gradient: 'from-violet-500 to-violet-600',
+    lightBg: 'bg-violet-50',
+    border: 'border-violet-200',
+    ring: 'ring-violet-500/20',
+    text: 'text-violet-700',
+    dot: 'bg-violet-500',
+  },
+  Myeloma: {
+    icon: AlertTriangle,
+    color: 'amber',
+    label: 'Myeloma',
+    description: 'Multiple myeloma markers detected',
+    gradient: 'from-amber-500 to-amber-600',
+    lightBg: 'bg-amber-50',
+    border: 'border-amber-200',
+    ring: 'ring-amber-500/20',
+    text: 'text-amber-700',
+    dot: 'bg-amber-500',
   },
 };
 
@@ -76,6 +88,8 @@ function ConfidenceRing({ value, color }: { value: number; color: string }) {
   const strokeColor =
     color === 'emerald'
       ? '#10b981'
+      : color === 'violet'
+        ? '#8b5cf6'
       : color === 'amber'
         ? '#f59e0b'
         : '#f43f5e';
@@ -103,8 +117,7 @@ function ConfidenceRing({ value, color }: { value: number; color: string }) {
           strokeDashoffset={offset}
           className="transition-all duration-1000 ease-out"
         />
-      </svg>
-      <span className={`absolute text-xl font-bold ${color === 'emerald' ? 'text-emerald-700' : color === 'amber' ? 'text-amber-700' : 'text-rose-700'}`}>
+      </svg>        <span className={`absolute text-xl font-bold ${color === 'emerald' ? 'text-emerald-700' : color === 'violet' ? 'text-violet-700' : color === 'amber' ? 'text-amber-700' : 'text-rose-700'}`}>
         {Math.round(value)}%
       </span>
     </div>
@@ -230,6 +243,8 @@ export default function ResultCard({ result, loading }: ResultCardProps) {
                     background:
                       config.color === 'emerald'
                         ? 'linear-gradient(90deg, #34d399, #10b981)'
+                        : config.color === 'violet'
+                          ? 'linear-gradient(90deg, #a78bfa, #8b5cf6)'
                         : config.color === 'amber'
                           ? 'linear-gradient(90deg, #fbbf24, #f59e0b)'
                           : 'linear-gradient(90deg, #fb7185, #f43f5e)',

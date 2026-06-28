@@ -52,7 +52,7 @@ export default function BloodTest() {
     } catch {
       setResult({
         id: String(Date.now()), timestamp: new Date().toISOString(), type: "blood_test",
-        patientName, prediction: form.blastCells > 20 ? "Malignant" : form.blastCells > 5 ? "Benign" : "Normal",
+        patientName, prediction: form.blastCells > 20 ? "Leukemia" : form.lymphocytes > 50 ? "Lymphoma" : form.hemoglobin < 10 ? "Myeloma" : "Normal",
         confidence: .9, status: "completed", details: form
       });
     } finally { setLoading(false); }

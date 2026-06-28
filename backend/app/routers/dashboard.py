@@ -41,7 +41,7 @@ async def get_dashboard(
     })
     abnormal_detections = await detections.count_documents({
         "user_id": user_id,
-        "prediction": {"$in": ["Benign", "Malignant"]},
+        "prediction": {"$in": ["Leukemia", "Lymphoma", "Myeloma"]},
     })
     pending_results = await detections.count_documents({
         "user_id": user_id, "status": "pending"

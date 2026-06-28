@@ -21,16 +21,17 @@ const mockStats: DashboardStats = {
 
 const mockRecentResults: DetectionResult[] = [
   { id: '1', timestamp: new Date().toISOString(), type: 'image', patientName: 'John Doe', prediction: 'Normal', confidence: 0.97, status: 'completed' },
-  { id: '2', timestamp: new Date(Date.now() - 86400000).toISOString(), type: 'blood_test', patientName: 'Jane Smith', prediction: 'Benign', confidence: 0.84, status: 'completed' },
-  { id: '3', timestamp: new Date(Date.now() - 172800000).toISOString(), type: 'image', patientName: 'Robert Brown', prediction: 'Malignant', confidence: 0.92, status: 'completed' },
+  { id: '2', timestamp: new Date(Date.now() - 86400000).toISOString(), type: 'blood_test', patientName: 'Jane Smith', prediction: 'Lymphoma', confidence: 0.84, status: 'completed' },
+  { id: '3', timestamp: new Date(Date.now() - 172800000).toISOString(), type: 'image', patientName: 'Robert Brown', prediction: 'Leukemia', confidence: 0.92, status: 'completed' },
   { id: '4', timestamp: new Date(Date.now() - 259200000).toISOString(), type: 'blood_test', patientName: 'Emily Davis', prediction: 'Normal', confidence: 0.95, status: 'completed' },
   { id: '5', timestamp: new Date(Date.now() - 345600000).toISOString(), type: 'image', patientName: 'Michael Wilson', prediction: 'Normal', confidence: 0.99, status: 'completed' },
 ];
 
 const predictionSeverity: Record<string, string> = {
   Normal: 'success',
-  Benign: 'warn',
-  Malignant: 'danger',
+  Leukemia: 'danger',
+  Lymphoma: 'warn',
+  Myeloma: 'warn',
 };
 
 export default function Dashboard() {
@@ -63,12 +64,12 @@ export default function Dashboard() {
   };
 
   const pieChartData = {
-    labels: ['Normal', 'Benign', 'Malignant'],
+    labels: ['Normal', 'Leukemia', 'Lymphoma', 'Myeloma'],
     datasets: [
       {
-        data: [stats.normalResults, stats.abnormalDetections - 8, 8],
-        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-        hoverBackgroundColor: ['#059669', '#d97706', '#dc2626'],
+        data: [stats.normalResults, Math.round(stats.abnormalDetections * 0.5), Math.round(stats.abnormalDetections * 0.3), Math.round(stats.abnormalDetections * 0.2)],
+        backgroundColor: ['#10b981', '#ef4444', '#8b5cf6', '#f59e0b'],
+        hoverBackgroundColor: ['#059669', '#dc2626', '#7c3aed', '#d97706'],
       },
     ],
   };

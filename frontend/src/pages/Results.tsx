@@ -14,14 +14,14 @@ import type { DetectionResult } from '../types';
 
 const mockResults: DetectionResult[] = [
   { id: '1', timestamp: new Date().toISOString(), type: 'image', patientName: 'John Doe', prediction: 'Normal', confidence: 0.97, status: 'completed' },
-  { id: '2', timestamp: new Date(Date.now() - 86400000).toISOString(), type: 'blood_test', patientName: 'Jane Smith', prediction: 'Benign', confidence: 0.84, status: 'completed' },
-  { id: '3', timestamp: new Date(Date.now() - 172800000).toISOString(), type: 'image', patientName: 'Robert Brown', prediction: 'Malignant', confidence: 0.92, status: 'completed' },
+  { id: '2', timestamp: new Date(Date.now() - 86400000).toISOString(), type: 'blood_test', patientName: 'Jane Smith', prediction: 'Lymphoma', confidence: 0.84, status: 'completed' },
+  { id: '3', timestamp: new Date(Date.now() - 172800000).toISOString(), type: 'image', patientName: 'Robert Brown', prediction: 'Leukemia', confidence: 0.92, status: 'completed' },
   { id: '4', timestamp: new Date(Date.now() - 259200000).toISOString(), type: 'blood_test', patientName: 'Emily Davis', prediction: 'Normal', confidence: 0.95, status: 'completed' },
   { id: '5', timestamp: new Date(Date.now() - 345600000).toISOString(), type: 'image', patientName: 'Michael Wilson', prediction: 'Normal', confidence: 0.99, status: 'completed' },
-  { id: '6', timestamp: new Date(Date.now() - 432000000).toISOString(), type: 'blood_test', patientName: 'Sarah Johnson', prediction: 'Malignant', confidence: 0.88, status: 'completed' },
+  { id: '6', timestamp: new Date(Date.now() - 432000000).toISOString(), type: 'blood_test', patientName: 'Sarah Johnson', prediction: 'Myeloma', confidence: 0.88, status: 'completed' },
 ];
 
-const predictionSeverity: Record<string, string> = { Normal: 'success', Benign: 'warn', Malignant: 'danger' };
+const predictionSeverity: Record<string, string> = { Normal: 'success', Leukemia: 'danger', Lymphoma: 'warn', Myeloma: 'warn' };
 
 const statusSeverity: Record<string, 'success' | 'warn' | 'danger'> = {
   completed: 'success',

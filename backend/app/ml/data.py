@@ -51,21 +51,27 @@ CBC_CLASS_PATTERNS = {
         "description": "Healthy blood profile — all parameters within normal ranges",
         "prevalence": "70-80% of routine screenings",
     },
-    "Benign": {
-        "means": [11.0, 4.5, 12.0, 180, 55, 35, 6, 3.0, 0.8, 5.0],
-        "stds": [3.0, 0.5, 1.5, 60, 10, 7, 2.5, 1.2, 0.4, 2.0],
-        "description": "Mild abnormalities — may indicate infection or non-cancerous conditions",
-        "prevalence": "15-20% of abnormal screenings",
+    "Leukemia": {
+        "means": [25.0, 3.5, 8.5, 100, 30, 50, 5, 2.0, 0.8, 35.0],
+        "stds": [10.0, 0.8, 2.0, 40, 15, 12, 3, 1.0, 0.5, 15.0],
+        "description": "Elevated WBC, blast cells, anemia — acute/chronic leukemia",
+        "prevalence": "~30% of hematologic cancers",
     },
-    "Malignant": {
-        "means": [18.0, 3.8, 9.5, 120, 45, 40, 7, 3.5, 1.0, 18.0],
-        "stds": [5.0, 0.6, 1.8, 50, 12, 8, 3, 1.5, 0.5, 6.0],
-        "description": "Highly abnormal profile — suspected leukemia/lymphoma",
-        "prevalence": "5-10% of abnormal screenings",
+    "Lymphoma": {
+        "means": [12.0, 4.5, 12.0, 200, 25, 55, 8, 4.0, 1.2, 3.0],
+        "stds": [4.0, 0.5, 1.5, 60, 10, 10, 3, 2.0, 0.5, 2.0],
+        "description": "Lymphocyte dominance, mild anemia — Hodgkin/Non-Hodgkin lymphoma",
+        "prevalence": "~30% of hematologic cancers",
+    },
+    "Myeloma": {
+        "means": [9.0, 3.8, 10.0, 140, 55, 28, 7, 2.5, 0.6, 2.0],
+        "stds": [3.0, 0.6, 1.8, 50, 10, 8, 3, 1.5, 0.3, 1.5],
+        "description": "Anemia, low platelets, rouleaux — multiple myeloma",
+        "prevalence": "~15% of hematologic cancers",
     },
 }
 
-CLASS_LABELS = ["Normal", "Benign", "Malignant"]
+CLASS_LABELS = ["Normal", "Leukemia", "Lymphoma", "Myeloma"]
 CLASS_LABEL_MAP = {label: idx for idx, label in enumerate(CLASS_LABELS)}
 
 
@@ -83,15 +89,20 @@ IMAGE_CLASS_PATTERNS = {
         "stds": [10, 1.5, 0.5, 0.04, 0.02, 0.05, 0.04, 0.03, 0.05, 1.0],
         "description": "Normal cell morphology",
     },
-    "Benign": {
-        "means": [70, 14.0, 3.5, 0.40, 0.10, 0.40, 0.38, 0.15, 0.75, 10.0],
-        "stds": [12, 2.0, 1.0, 0.06, 0.03, 0.06, 0.05, 0.04, 0.08, 3.0],
-        "description": "Abnormal but non-cancerous morphology",
+    "Leukemia": {
+        "means": [50, 18.0, 6.0, 0.60, 0.18, 0.32, 0.45, 0.25, 0.55, 35.0],
+        "stds": [15, 3.0, 2.0, 0.10, 0.05, 0.08, 0.07, 0.07, 0.12, 12.0],
+        "description": "Blast cells, high nucleus/cytoplasm ratio — leukemia",
     },
-    "Malignant": {
-        "means": [60, 16.0, 5.0, 0.55, 0.15, 0.35, 0.42, 0.22, 0.60, 25.0],
-        "stds": [15, 2.5, 1.5, 0.08, 0.04, 0.07, 0.06, 0.06, 0.10, 8.0],
-        "description": "Highly abnormal morphology — blast cells present",
+    "Lymphoma": {
+        "means": [65, 15.0, 4.0, 0.50, 0.12, 0.38, 0.40, 0.18, 0.70, 8.0],
+        "stds": [12, 2.5, 1.5, 0.08, 0.04, 0.07, 0.06, 0.05, 0.10, 4.0],
+        "description": "Atypical lymphocytes — lymphoma",
+    },
+    "Myeloma": {
+        "means": [75, 14.0, 3.0, 0.45, 0.10, 0.42, 0.38, 0.14, 0.75, 3.0],
+        "stds": [10, 2.0, 1.0, 0.06, 0.03, 0.06, 0.05, 0.04, 0.08, 2.0],
+        "description": "Plasma cell morphology — multiple myeloma",
     },
 }
 
@@ -160,7 +171,7 @@ def export_all_datasets(n_per_class: int = 2000) -> tuple[str, str]:
     print("=" * 60)
     print("📦 HematoScan Dataset Export")
     print("=" * 60)
-    print(f"\nGenerating {n_per_class} samples per class ({n_per_class * 3} total per dataset)...")
+    print(f"\nGenerating {n_per_class} samples per class ({n_per_class * len(CLASS_LABELS)} total per dataset)...")
 
     cbc_path = export_cbc_dataset(n_per_class)
     img_path = export_image_dataset(n_per_class)
@@ -209,8 +220,10 @@ def load_csv_dataset(
         found_labels = set(y.unique())
         unknown = found_labels - valid_labels
         if unknown:
-            print(f"  ⚠️  Unknown labels found: {unknown}. Mapping them to 'Benign'.")
-            y = y.apply(lambda v: v if v in valid_labels else "Benign")
+            print(f"  ⚠️  Unknown labels found: {unknown}. Dropping unknown rows.")
+            mask = y.isin(valid_labels)
+            X = X[mask]
+            y = y[mask]
         y = y.map(CLASS_LABEL_MAP)
 
     print(f"\n📂 Loaded dataset: {os.path.basename(csv_path)}")

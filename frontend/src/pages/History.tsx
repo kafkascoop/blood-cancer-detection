@@ -12,20 +12,20 @@ import { getDetectionHistory } from '../utils/api';
 import type { DetectionResult } from '../types';
 
 const mockHistory: DetectionResult[] = Array.from({ length: 20 }, (_, i) => {
-  const predictions: ('Normal' | 'Benign' | 'Malignant')[] = ['Normal', 'Benign', 'Malignant'];
+  const predictions: ('Normal' | 'Leukemia' | 'Lymphoma' | 'Myeloma')[] = ['Normal', 'Leukemia', 'Lymphoma', 'Myeloma'];
   const names = ['John Doe', 'Jane Smith', 'Robert Brown', 'Emily Davis', 'Michael Wilson', 'Sarah Johnson', 'David Lee', 'Lisa Anderson'];
   return {
     id: `hist-${i}`,
     timestamp: new Date(Date.now() - i * 86400000 * (1 + Math.random())).toISOString(),
     type: i % 3 === 0 ? 'blood_test' : 'image',
     patientName: names[i % names.length],
-    prediction: predictions[i % 3],
+    prediction: predictions[i % 4],
     confidence: 0.80 + Math.random() * 0.19,
     status: i === 0 ? 'pending' : 'completed',
   };
 });
 
-const predictionSeverity: Record<string, string> = { Normal: 'success', Benign: 'warn', Malignant: 'danger' };
+const predictionSeverity: Record<string, string> = { Normal: 'success', Leukemia: 'danger', Lymphoma: 'warn', Myeloma: 'warn' };
 
 export default function History() {
   const [history, setHistory] = useState<DetectionResult[]>(mockHistory);
@@ -54,7 +54,7 @@ export default function History() {
     >
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${r.prediction === 'Normal' ? 'bg-emerald-100 text-emerald-700' :
-            r.prediction === 'Benign' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+            r.prediction === 'Lymphoma' ? 'bg-violet-100 text-violet-700' : r.prediction === 'Myeloma' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
           }`}>
           {r.patientName.charAt(0)}
         </div>
