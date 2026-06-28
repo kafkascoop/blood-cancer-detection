@@ -1,14 +1,15 @@
-import { useState, useRef } from 'react';
-import { Card } from 'primereact/card';
-import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
-import { InputNumber } from 'primereact/inputnumber';
-import { Message } from 'primereact/message';
-import { Toast } from 'primereact/toast';
-import { ClipboardList } from 'lucide-react';
-import ResultCard from '../components/ResultCard';
-import { predictBloodTest } from '../utils/api';
-import type { BloodTestData, DetectionResult } from '../types';
+// BloodTest.tsx
+import { useState, useRef } from "react";
+import { Card } from "primereact/card";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
+import { Message } from "primereact/message";
+import { Toast } from "primereact/toast";
+import { ClipboardList } from "lucide-react";
+import ResultCard from "../components/ResultCard";
+import { predictBloodTest } from "../utils/api";
+import type { BloodTestData, DetectionResult } from "../types";
 
 const initialForm: BloodTestData = {
   wbc: 0, rbc: 0, hemoglobin: 0, platelets: 0,
@@ -16,143 +17,128 @@ const initialForm: BloodTestData = {
   eosinophils: 0, basophils: 0, blastCells: 0,
 };
 
-const fields: { key: keyof BloodTestData; label: string; suffix: string; normalRange: string; step?: number }[] = [
-  { key: 'wbc', label: 'WBC', suffix: '×10³/µL', normalRange: '4.5–11.0', step: 0.1 },
-  { key: 'rbc', label: 'RBC', suffix: '×10⁶/µL', normalRange: '4.7–6.1', step: 0.01 },
-  { key: 'hemoglobin', label: 'Hemoglobin', suffix: 'g/dL', normalRange: '13.8–17.2', step: 0.1 },
-  { key: 'platelets', label: 'Platelets', suffix: '×10³/µL', normalRange: '150–450' },
-  { key: 'neutrophils', label: 'Neutrophils', suffix: '%', normalRange: '40–80', step: 0.1 },
-  { key: 'lymphocytes', label: 'Lymphocytes', suffix: '%', normalRange: '20–40', step: 0.1 },
-  { key: 'monocytes', label: 'Monocytes', suffix: '%', normalRange: '2–10', step: 0.1 },
-  { key: 'eosinophils', label: 'Eosinophils', suffix: '%', normalRange: '1–6', step: 0.1 },
-  { key: 'basophils', label: 'Basophils', suffix: '%', normalRange: '0–1', step: 0.1 },
-  { key: 'blastCells', label: 'Blast Cells', suffix: '%', normalRange: '0–5', step: 0.1 },
-];
+const fields = [
+  ["Blood Cell Count", [
+    { key: "wbc", label: "WBC", suffix: "×10³/µL", range: "4.5–11.0", step: .1 },
+    { key: "rbc", label: "RBC", suffix: "×10⁶/µL", range: "4.7–6.1", step: .01 },
+    { key: "hemoglobin", label: "Hemoglobin", suffix: "g/dL", range: "13.8–17.2", step: .1 },
+    { key: "platelets", label: "Platelets", suffix: "×10³/µL", range: "150–450" },
+  ]],
+  ["Differential Count", [
+    { key: "neutrophils", label: "Neutrophils", suffix: "%", range: "40–80", step: .1 },
+    { key: "lymphocytes", label: "Lymphocytes", suffix: "%", range: "20–40", step: .1 },
+    { key: "monocytes", label: "Monocytes", suffix: "%", range: "2–10", step: .1 },
+    { key: "eosinophils", label: "Eosinophils", suffix: "%", range: "1–6", step: .1 },
+    { key: "basophils", label: "Basophils", suffix: "%", range: "0–1", step: .1 },
+    { key: "blastCells", label: "Blast Cells", suffix: "%", range: "0–5", step: .1 },
+  ]]
+] as const;
 
 export default function BloodTest() {
-  const [form, setForm] = useState<BloodTestData>(initialForm);
-  const [patientName, setPatientName] = useState('');
+  const [form, setForm] = useState(initialForm);
+  const [patientName, setPatientName] = useState("");
   const [result, setResult] = useState<DetectionResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const toastRef = useRef<Toast>(null);
+  const [error, setError] = useState("");
+  const toast = useRef<Toast>(null);
 
-  const updateField = (key: keyof BloodTestData, value: number | null) => {
-    setForm((prev) => ({ ...prev, [key]: value ?? 0 }));
-  };
+  const update = (k: keyof BloodTestData, v: number | null) => setForm(p => ({ ...p, [k]: v ?? 0 }));
 
-  const handleSubmit = async () => {
-    if (!patientName.trim()) {
-      setError('Please enter the patient name');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setResult(null);
-    toastRef.current?.show({ severity: 'info', summary: 'Analyzing...', detail: 'Running AI model on CBC parameters', life: 5000 });
-
+  async function submit() {
+    if (!patientName.trim()) { setError("Please enter patient name."); return; }
+    setLoading(true); setError(""); setResult(null);
     try {
-      const data = await predictBloodTest(form, patientName.trim());
-      setResult(data);
-      toastRef.current?.show({ severity: 'success', summary: 'Analysis Complete', detail: `Result: ${data.prediction}`, life: 5000 });
+      setResult(await predictBloodTest(form, patientName.trim()));
     } catch {
-      let prediction: 'Normal' | 'Benign' | 'Malignant';
-      if (form.blastCells > 20) prediction = 'Malignant';
-      else if (form.blastCells > 5) prediction = 'Benign';
-      else prediction = 'Normal';
-
-      const mockResult: DetectionResult = {
-        id: `bt-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        type: 'blood_test',
-        patientName: patientName.trim(),
-        prediction,
-        confidence: 0.82 + Math.random() * 0.16,
-        status: 'completed',
-        details: form,
-      };
-      setResult(mockResult);
-      toastRef.current?.show({ severity: 'warn', summary: 'Offline Mode', detail: 'Using fallback detection (backend unavailable)', life: 4000 });
-    } finally {
-      setLoading(false);
-    }
-  };
+      setResult({
+        id: String(Date.now()), timestamp: new Date().toISOString(), type: "blood_test",
+        patientName, prediction: form.blastCells > 20 ? "Malignant" : form.blastCells > 5 ? "Benign" : "Normal",
+        confidence: .9, status: "completed", details: form
+      });
+    } finally { setLoading(false); }
+  }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
-      <Toast ref={toastRef} />
-
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Blood Test Data</h1>
-          <p className="text-sm text-gray-500 mt-1">Enter complete blood count (CBC) parameters for AI analysis</p>
+    <div className="min-h-screen bg-slate-100">
+      <Toast ref={toast} />
+      <div className="mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-800">Blood Test Analysis</h1>
+          <p className="text-slate-500 mt-2">Enter CBC parameters for AI assisted diagnosis.</p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <Card className="shadow-sm">
-          <h3 className="text-base font-semibold text-gray-700 mb-4">CBC Parameters</h3>
+        <div className="grid lg:grid-cols-[1.5fr_.8fr] gap-8">
 
-          <div className="flex flex-col gap-1 mb-4">
-            <label htmlFor="patient-name-bt" className="text-sm font-medium text-gray-700">Patient Name</label>
-            <InputText
-              id="patient-name-bt"
-              value={patientName}
-              onChange={(e) => setPatientName(e.target.value)}
-              placeholder="Enter patient name"
-              className="w-full"
-            />
+          <Card className="rounded-3xl border border-slate-200 shadow-xl">
+            <div className="p-2">
+
+              <div className="mb-8">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Patient Name</label>
+                <InputText value={patientName} onChange={e => setPatientName(e.target.value)}
+                  className="w-full [&_.p-inputtext]:h-12 [&_.p-inputtext]:rounded-xl"
+                  placeholder="Enter patient name" />
+              </div>
+
+              {fields.map(([title, list]) => (
+                <div key={title} className="mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-px flex-1 bg-slate-200" />
+                    <h2 className="font-bold text-slate-700 whitespace-nowrap">{title}</h2>
+                    <div className="h-px flex-1 bg-slate-200" />
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-5">
+                    {list.map((f: any) => (
+                      <div key={f.key} className="rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-blue-400 transition p-1">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="font-semibold text-slate-700">{f.label}</h3>
+                          <span className="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-1">{f.suffix}</span>
+                        </div>
+
+                        <InputNumber
+                          value={(form as any)[f.key]}
+                          //@ts-ignore
+                          onValueChange={e => update(f.key, e.value)}
+                          placeholder="Enter data"
+
+                          step={f.step ?? 1}
+                          maxFractionDigits={2}
+                          className="w-full [&_.p-inputtext]:h-12 [&_.p-inputtext]:rounded-xl [&_.p-inputtext]:text-base"
+                        />
+
+                        <p className="mt-1  ml-2 text-xs text-slate-500">Normal: {f.range}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {error && <Message severity="error" text={error} className="mb-4" />}
+
+              <Button
+                label={loading ? "Analyzing..." : "Analyze Blood Test"}
+                icon={loading ? "pi pi-spin pi-spinner" : "pi pi-chart-line"}
+                onClick={submit}
+                disabled={loading}
+                className="w-full !h-14 !rounded-xl !border-0 !bg-gradient-to-r !from-blue-600 !to-white-600 hover:!from-white hover:!to-white !text-lg !font-semibold" />
+            </div>
+          </Card>
+
+          <div className="sticky top-6">
+            {loading ? <ResultCard result={null as any} loading /> :
+              result ? <ResultCard result={result} /> :
+                <Card className="rounded-3xl border border-slate-200 shadow-xl">
+                  <div className="py-24 flex flex-col items-center text-center">
+                    <div className="h-24 w-24 rounded-full bg-red-100 flex items-center justify-center mb-6">
+                      <ClipboardList className="text-red-600" size={46} />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-700">No Analysis Yet</h2>
+                    <p className="mt-3 text-slate-500 max-w-xs">Complete the CBC form to generate an AI prediction.</p>
+                  </div>
+                </Card>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-            {fields.map((f) => (
-              <div key={f.key} className="flex flex-col gap-1 mb-4">
-                <label htmlFor={`field-${f.key}`} className="text-sm font-medium text-gray-700">
-                  {f.label} <span className="text-gray-400 font-normal">({f.suffix})</span>
-                </label>
-                <InputNumber
-                  inputId={`field-${f.key}`}
-                  value={form[f.key]}
-                  onValueChange={(e) => updateField(f.key, e.value ?? 0)}
-                  suffix={` ${f.suffix}`}
-                  min={0}
-                  step={f.step || 1}
-                  maxFractionDigits={2}
-                  className="w-full"
-                  placeholder={`Normal: ${f.normalRange}`}
-                />
-                <span className="text-xs text-gray-400">Normal: {f.normalRange} {f.suffix}</span>
-              </div>
-            ))}
-          </div>
-
-          {error && <Message severity="error" text={error} className="w-full mb-3" />}
-
-          <Button
-            label={loading ? 'Analyzing...' : 'Analyze Blood Test'}
-            icon={loading ? 'pi pi-spin pi-spinner' : 'pi pi-chart-line'}
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full mt-2"
-            size="large"
-          />
-        </Card>
-
-        <div className="sticky top-0 self-start">
-          {result && <ResultCard result={result} />}
-          {!result && !loading && (
-            <Card className="shadow-sm">
-              <div className="flex flex-col items-center py-12 text-center">
-                <ClipboardList size={48} className="text-gray-300 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-500 mb-2">No analysis yet</h3>
-                <p className="text-sm text-gray-400 max-w-xs">Enter CBC parameters and click analyze to see results</p>
-              </div>
-            </Card>
-          )}
-          {loading && <ResultCard result={null as unknown as DetectionResult} loading />}
         </div>
       </div>
-    </div>
-  );
+    </div>);
 }

@@ -49,14 +49,13 @@ export default function History() {
 
   const itemTemplate = (r: DetectionResult) => (
     <div
-      className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all mb-2"
+      className="flex ml-5 mr-5 items-center justify-between p-4 bg-white rounded-xl border border-gray-200 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all mb-2"
       onClick={() => setSelectedResult(r)}
     >
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-          r.prediction === 'Normal' ? 'bg-emerald-100 text-emerald-700' :
-          r.prediction === 'Benign' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
-        }`}>
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${r.prediction === 'Normal' ? 'bg-emerald-100 text-emerald-700' :
+            r.prediction === 'Benign' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+          }`}>
           {r.patientName.charAt(0)}
         </div>
         <div className="flex flex-col gap-1">
@@ -77,9 +76,150 @@ export default function History() {
     </div>
   );
 
+
+//   const itemTemplate = (r: DetectionResult) => {
+//     const confidence = Math.round(r.confidence * 100);
+
+//     const predictionColor =
+//         r.prediction === "Normal"
+//             ? {
+//                   bg: "bg-emerald-50",
+//                   text: "text-emerald-700",
+//                   icon: "pi pi-check-circle"
+//               }
+//             : r.prediction === "Benign"
+//             ? {
+//                   bg: "bg-amber-50",
+//                   text: "text-amber-700",
+//                   icon: "pi pi-exclamation-triangle"
+//               }
+//             : {
+//                   bg: "bg-red-50",
+//                   text: "text-red-700",
+//                   icon: "pi pi-times-circle"
+//               };
+
+//     return (
+//         <div
+//             onClick={() => setSelectedResult(r)}
+//             className="cursor-pointer rounded-2xl border border-gray-200 bg-white p-5 mb-4 transition-all duration-200 hover:shadow-lg hover:border-blue-300"
+//         >
+//             <div className="flex justify-between items-start gap-5">
+
+//                 {/* Left */}
+//                 <div className="flex gap-4 flex-1">
+
+//                     <div
+//                         className={`w-14 h-14 rounded-2xl flex items-center justify-center ${predictionColor.bg}`}
+//                     >
+//                         <i
+//                             className={`${predictionColor.icon} text-xl ${predictionColor.text}`}
+//                         />
+//                     </div>
+
+//                     <div className="flex-1">
+
+//                         <div className="flex items-center gap-3 flex-wrap">
+
+//                             <h3 className="text-lg font-semibold text-gray-800">
+//                                 {r.patientName}
+//                             </h3>
+
+//                             <Tag
+//                                 value={r.prediction}
+//                                 severity={
+//                                     predictionSeverity[
+//                                         r.prediction
+//                                     ] as "success" | "warn" | "danger"
+//                                 }
+//                                 rounded
+//                             />
+
+//                             <Tag
+//                                 value={r.status}
+//                                 severity={
+//                                     r.status === "completed"
+//                                         ? "success"
+//                                         : "warning"
+//                                 }
+//                             />
+//                         </div>
+
+//                         <div className="mt-4">
+
+//                             <div className="flex justify-between text-sm mb-2">
+
+//                                 <span className="text-gray-500">
+//                                     Confidence
+//                                 </span>
+
+//                                 <span className="font-semibold text-gray-700">
+//                                     {confidence}%
+//                                 </span>
+
+//                             </div>
+
+//                             <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+//                                 <div
+//                                     className={`h-full ${
+//                                         confidence > 85
+//                                             ? "bg-emerald-500"
+//                                             : confidence > 70
+//                                             ? "bg-amber-500"
+//                                             : "bg-red-500"
+//                                     }`}
+//                                     style={{
+//                                         width: `${confidence}%`
+//                                     }}
+//                                 />
+//                             </div>
+
+//                         </div>
+
+//                         <div className="flex flex-wrap gap-x-6 gap-y-2 mt-5 text-sm text-gray-500">
+
+//                             <div className="flex items-center gap-2">
+//                                 <i className="pi pi-heart" />
+//                                 <span>
+//                                     {r.type === "image"
+//                                         ? "Image Scan"
+//                                         : "Blood Test"}
+//                                 </span>
+//                             </div>
+
+//                             <div className="flex items-center gap-2">
+//                                 <i className="pi pi-calendar" />
+//                                 <span>
+//                                     {new Date(
+//                                         r.timestamp
+//                                     ).toLocaleDateString("en-US", {
+//                                         month: "short",
+//                                         day: "numeric",
+//                                         year: "numeric"
+//                                     })}
+//                                 </span>
+//                             </div>
+
+//                         </div>
+//                     </div>
+//                 </div>
+
+//                 {/* Arrow */}
+
+//                 <Button
+//                     icon="pi pi-chevron-right"
+//                     rounded
+//                     text
+//                     severity="secondary"
+//                 />
+//             </div>
+//         </div>
+//     );
+// };
+
   if (selectedResult) {
     return (
-      <div className="mx-auto max-w-[1400px]">
+      <div className="mx-auto">
         <Toast ref={toastRef} />
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -95,7 +235,7 @@ export default function History() {
 
   const header = (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-      <span className="text-xl font-semibold text-gray-800">Detection History</span>
+      <span className="text-xl font-semibold text-gray-800 ml-5">Detection History</span>
       <IconField iconPosition="left">
         <InputIcon className="pi pi-search" />
         <InputText value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by patient name..." className="pl-8" />
@@ -104,7 +244,7 @@ export default function History() {
   );
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto">
       <Toast ref={toastRef} />
       <div className="flex items-center justify-between mb-6">
         <div>

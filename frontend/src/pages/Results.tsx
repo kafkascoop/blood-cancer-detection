@@ -8,6 +8,7 @@ import { InputText } from 'primereact/inputtext';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { Toast } from 'primereact/toast';
+import { BarChart3, ArrowLeft } from 'lucide-react';
 import ResultCard from '../components/ResultCard';
 import type { DetectionResult } from '../types';
 
@@ -78,18 +79,26 @@ export default function Results() {
 
   if (selectedResult) {
     return (
-      <div className="mx-auto max-w-[1400px]">
+      <div className="mx-auto max-w-[1400px] space-y-6">
         <Toast ref={toastRef} />
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <BarChart3 size={24} className="text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-800">Results</h1>
-            <p className="text-sm text-gray-500 mt-1">Detailed view of detection result</p>
           </div>
+          <p className="text-sm text-gray-500">Detailed view of detection result</p>
         </div>
-        <Button label="← Back to results" text className="mb-4" onClick={() => setSelectedResult(null)} />
+        <Button
+          label="Back to results"
+          icon={<ArrowLeft size={16} />}
+          text
+          className="p-0 text-blue-600 hover:text-blue-700"
+          onClick={() => setSelectedResult(null)}
+          pt={{ icon: { className: 'mr-1.5' } }}
+        />
         <ResultCard result={selectedResult} />
         {selectedResult.details && 'wbc' in selectedResult.details && (
-          <Card className="shadow-sm mt-6">
+          <Card className="shadow-sm">
             <h3 className="text-base font-semibold text-gray-700 mb-4">Blood Test Details</h3>
             <DataTable value={[selectedResult.details]} size="small">
               {Object.entries(selectedResult.details).map(([key]) => (
@@ -107,13 +116,14 @@ export default function Results() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] space-y-6">
       <Toast ref={toastRef} />
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <BarChart3 size={24} className="text-blue-600" />
           <h1 className="text-2xl font-bold text-gray-800">Results</h1>
-          <p className="text-sm text-gray-500 mt-1">View and analyze detection results</p>
         </div>
+        <p className="text-sm text-gray-500">View and analyze detection results</p>
       </div>
 
       <Card className="shadow-sm">
