@@ -92,6 +92,38 @@ export const getDashboardStats = async () => {
   };
 };
 
+// ========== Settings ==========
+
+export interface AppSettings {
+  app_name: string;
+  image_model_mode: 'auto' | 'cnn' | 'opencv';
+}
+
+export interface DlStatus {
+  tensorflow_available: boolean;
+  tensorflow_version: string | null;
+  pytorch_available: boolean;
+  pytorch_version: string | null;
+  cnn_available: boolean;
+}
+
+export const getSettings = async (): Promise<AppSettings> => {
+  const { data } = await api.get('/settings');
+  return data;
+};
+
+export const updateSettings = async (
+  settings: AppSettings
+): Promise<AppSettings> => {
+  const { data } = await api.put('/settings', settings);
+  return data;
+};
+
+export const getDlStatus = async (): Promise<DlStatus> => {
+  const { data } = await api.get('/settings/deep-learning-status');
+  return data;
+};
+
 // ========== Mapping ==========
 
 /** Convert snake_case backend response to camelCase frontend types */

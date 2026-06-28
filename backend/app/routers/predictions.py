@@ -64,8 +64,8 @@ async def predict_from_image_upload(
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    # Run prediction with the saved image path
-    prediction, confidence = predict_from_image(file_path)
+    # Run prediction with the saved image path (async for settings-aware routing)
+    prediction, confidence = await predict_from_image(file_path)
     now = datetime.now(timezone.utc)
 
     detection = {

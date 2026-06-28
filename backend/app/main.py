@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import connect_db, close_db
 from app.routers import auth, predictions, results, dashboard
+from app.routers import settings as settings_router
 from app.config import settings
 
 
@@ -34,6 +35,7 @@ app.include_router(auth.router)
 app.include_router(predictions.router)
 app.include_router(results.router)
 app.include_router(dashboard.router)
+app.include_router(settings_router.router)
 
 
 @app.get("/")

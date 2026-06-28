@@ -7,6 +7,7 @@ import UploadImage from './pages/UploadImage';
 import BloodTest from './pages/BloodTest';
 import Results from './pages/Results';
 import History from './pages/History';
+import Settings from './pages/Settings';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -45,6 +46,7 @@ function AppRoutes() {
         <Route path="/blood-test" element={<BloodTest />} />
         <Route path="/results" element={<Results />} />
         <Route path="/history" element={<History />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

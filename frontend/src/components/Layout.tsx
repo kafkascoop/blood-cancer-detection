@@ -5,7 +5,7 @@ import { Menu } from 'primereact/menu';
 import { Toast } from 'primereact/toast';
 import type { MenuItem } from 'primereact/menuitem';
 import {
-  Microscope, LayoutDashboard, Upload, ClipboardList, BarChart3, History,
+  Microscope, LayoutDashboard, Upload, ClipboardList, BarChart3, History, Settings,
   Menu as MenuIcon, X, ChevronLeft, ChevronRight, FileText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,7 @@ const navItems = [
   { to: '/blood-test', label: 'Blood Test Data', icon: ClipboardList },
   { to: '/results', label: 'Results', icon: BarChart3 },
   { to: '/history', label: 'History', icon: History },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
 export default function Layout() {
