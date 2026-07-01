@@ -4,12 +4,15 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { Chart } from 'primereact/chart';
+import { Button } from 'primereact/button';
 import {
   Microscope, Activity, AlertTriangle, Clock, BarChart3, Dna,
+  ArrowRight, RefreshCw,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/StatCard';
-import { getDashboardStats } from '../utils/api';
-import type { DashboardStats, DetectionResult } from '../types';
+import { getDashboardStats, getActivityLogs } from '../utils/api';
+import type { DashboardStats, DetectionResult, ActivityLogEntry } from '../types';
 
 const mockStats: DashboardStats = {
   totalTests: 147,
@@ -35,7 +38,10 @@ const predictionSeverity: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(mockStats);
+  const [recentActivities, setRecentActivities] = useState<ActivityLogEntry[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -47,6 +53,25 @@ export default function Dashboard() {
       }
     };
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      setActivitiesLoading(true);
+      try {
+        const data = await getActivityLogs({ limit: 8, user_only: true });
+        setRecentActivities(data);
+      } catch {
+        // Backend not available — show empty state
+        setRecentActivities([]);
+      } finally {
+        setActivitiesLoading(false);
+      }
+    };
+    fetchActivities();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchActivities, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -176,6 +201,85 @@ export default function Dashboard() {
           <Column header="Confidence" body={confidenceBody} sortable />
           <Column header="Date" body={dateBody} sortable />
         </DataTable>
+      </Card>
+
+      {/* ========== RECENT ACTIVITY WIDGET ========== */}
+      <Card className="shadow-sm mt-6">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2 text-gray-700 font-semibold text-sm">
+            <RefreshCw size={16} />
+            <h3>Recent Activity</h3>
+          </div>
+          <Button
+            label="View All"
+            icon={<ArrowRight size={14} />}
+            text
+            className="text-sm text-blue-600 hover:text-blue-700"
+            onClick={() => navigate('/activity-logs')}
+            pt={{ icon: { className: 'ml-1.5' } }}
+          />
+        </div>
+
+        {activitiesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <i className="pi pi-spin pi-spinner text-2xl text-blue-400" />
+          </div>
+        ) : recentActivities.length === 0 ? (
+          <div className="flex flex-col items-center py-8 text-center">
+            <RefreshCw size={28} className="text-gray-300 mb-2" />
+            <p className="text-sm text-gray-400">No recent activity</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {recentActivities.map((log) => {
+              const statusSeverity: 'success' | 'warn' | 'danger' | 'info' =
+                log.status_code < 300 ? 'success' :
+                log.status_code < 400 ? 'info' :
+                log.status_code < 500 ? 'warn' : 'danger';
+
+              const methodColor =
+                log.method === 'GET' ? 'bg-emerald-100 text-emerald-700' :
+                log.method === 'POST' ? 'bg-blue-100 text-blue-700' :
+                log.method === 'PUT' || log.method === 'PATCH' ? 'bg-amber-100 text-amber-700' :
+                log.method === 'DELETE' ? 'bg-rose-100 text-rose-700' :
+                'bg-gray-100 text-gray-600';
+
+              return (
+                <div key={log.id} className="flex items-center gap-3 px-6 py-2.5 hover:bg-gray-50/50 transition-colors">
+                  {/* Method badge */}
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold w-14 justify-center shrink-0 ${methodColor}`}>
+                    {log.method}
+                  </span>
+
+                  {/* Endpoint */}
+                  <span className="font-mono text-xs text-gray-700 flex-1 truncate">
+                    {log.endpoint}
+                  </span>
+
+                  {/* Status code */}
+                  <Tag value={log.status_code} severity={statusSeverity} rounded className="text-[11px]" />
+
+                  {/* Duration */}
+                  <span className={`font-mono text-[11px] w-12 text-right shrink-0 ${
+                    (log.duration_ms ?? 0) < 200 ? 'text-emerald-600' :
+                    (log.duration_ms ?? 0) < 500 ? 'text-amber-600' : 'text-rose-600'
+                  }`}>
+                    {log.duration_ms ?? '-'}ms
+                  </span>
+
+                  {/* Timestamp */}
+                  <span className="text-[11px] text-gray-400 w-28 text-right shrink-0 hidden sm:block">
+                    {new Date(log.created_at).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );

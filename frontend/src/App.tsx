@@ -8,6 +8,7 @@ import BloodTest from './pages/BloodTest';
 import Results from './pages/Results';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import ActivityLogs from './pages/ActivityLogs';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Route path="/results" element={<Results />} />
         <Route path="/history" element={<History />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/activity-logs" element={<ActivityLogs />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

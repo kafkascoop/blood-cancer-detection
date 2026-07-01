@@ -124,6 +124,23 @@ export const getDlStatus = async (): Promise<DlStatus> => {
   return data;
 };
 
+// ========== Activity Logs ==========
+
+export const getActivityLogs = async (params: Record<string, any> = {}): Promise<import('../types').ActivityLogEntry[]> => {
+  const { data } = await api.get('/activities', { params });
+  return data;
+};
+
+export const getActivityStats = async (): Promise<import('../types').ActivityLogStatsData> => {
+  const { data } = await api.get('/activities/stats');
+  return data;
+};
+
+export const getActivityLogById = async (id: string): Promise<import('../types').ActivityLogEntry> => {
+  const { data } = await api.get(`/activities/${id}`);
+  return data;
+};
+
 // ========== Mapping ==========
 
 /** Convert snake_case backend response to camelCase frontend types */

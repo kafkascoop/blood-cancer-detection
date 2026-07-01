@@ -39,3 +39,36 @@ export interface DashboardStats {
 }
 
 export type PredictionColor = 'emerald' | 'violet' | 'amber' | 'rose' | 'slate';
+
+// ========== Activity Logs ==========
+
+export interface ActivityLogEntry {
+  id: string;
+  user_id?: string | null;
+  username?: string | null;
+  method: string;
+  endpoint: string;
+  status_code: number;
+  duration_ms?: number | null;
+  detail?: string | null;
+  created_at: string;
+}
+
+export interface ActivityLogStatsData {
+  total_logs: number;
+  method_counts: Record<string, number>;
+  status_code_counts: Record<string, number>;
+  endpoint_counts: Record<string, number>;
+  monthly_logs: number[];
+}
+
+export interface ActivityLogFilters {
+  method?: string;
+  status_code?: number;
+  endpoint?: string;
+  date_from?: string;
+  date_to?: string;
+  user_only?: boolean;
+  limit?: number;
+  skip?: number;
+}

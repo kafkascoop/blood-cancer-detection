@@ -44,6 +44,12 @@ async def get_settings_collection():
     return db["settings"]
 
 
+async def get_activities_collection():
+    """Get the activity_logs collection."""
+    db = get_db()
+    return db["activity_logs"]
+
+
 async def connect_db():
     """Connect to MongoDB and ensure indexes."""
     try:
@@ -66,6 +72,18 @@ async def connect_db():
         detections = await get_detections_collection()
         await detections.create_index("user_id")
         await detections.create_index([("user_id", 1), ("created_at", -1)])
+
+        # Ensure activity_logs indexes
+        activities = await get_activities_collection()
+        await activities.create_index([("created_at", -1)])
+        await activities.create_index([("method", 1), ("created_at", -1)])
+        await activities.create_index([("status_code", 1), ("created_at", -1)])
+        await activities.create_index("user_id")
+        # TTL index: auto-delete logs older than 180 days
+        await activities.create_index(
+            "created_at",
+            expireAfterSeconds=180 * 24 * 3600,
+        )
 
         # Ensure settings collection exists with default
         settings_col = await get_settings_collection()
