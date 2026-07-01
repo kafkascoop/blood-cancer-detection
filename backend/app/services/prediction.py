@@ -211,70 +211,72 @@ def _predict_from_image_fallback(image_path: str = "") -> tuple[str, float]:
 
     When ML models are unavailable, extracts basic cell morphology features
     from the image and classifies based on known medical patterns.
+    Uses relative feature comparison (distance-to-ideal) for each class
+    rather than absolute thresholds, making it more robust across different
+    image types.
     """
     if image_path:
         try:
             from app.ml.data import extract_image_features
             features = extract_image_features(image_path)
-            # features order: cell_count, cell_size_mean, cell_size_std,
-            #   nucleus_ratio_mean, nucleus_ratio_std,
-            #   blue_intensity, red_intensity,
-            #   texture_contrast, texture_homogeneity, blast_like_cells_pct
 
             cell_count = features[0]
             cell_size = features[1]
             nucleus_ratio = features[3]
             blast_pct = features[9]
+            blue_intensity = features[5]
+            red_intensity = features[6]
 
-            # Score each class based on morphological rules
-            scores = {"Normal": 0.0, "Leukemia": 0.0, "Lymphoma": 0.0, "Myeloma": 0.0}
+            # Score each class by distance to expected medical pattern
+            # Lower distance = better match
+            # Ideal profiles for each class based on medical knowledge:
+            # (cell_count, cell_size, nucleus_ratio, blast_pct, blue/red ratio)
+            ideals = {
+                "Normal":   (80,  12, 0.30, 2.0, 1.3),
+                "Leukemia": (50,  18, 0.60, 35.0, 0.7),
+                "Lymphoma": (65,  15, 0.50, 8.0, 0.95),
+                "Myeloma":  (75,  14, 0.45, 3.0, 1.1),
+            }
 
-            # Leukemia: large cells, high nucleus ratio, few cells, high blast %
-            if cell_size > 25:
-                scores["Leukemia"] += 0.7
-            elif cell_size > 18:
-                scores["Leukemia"] += 0.4
-            if nucleus_ratio > 0.55:
-                scores["Leukemia"] += 0.3
-            if blast_pct > 20:
-                scores["Leukemia"] += 0.4
-            elif blast_pct > 10:
-                scores["Leukemia"] += 0.2
-            if cell_count < 8:
-                scores["Leukemia"] += 0.3
+            scores = {}
+            for cls_name, (i_count, i_size, i_nuc, i_blast, i_color) in ideals.items():
+                # Normalize each metric to [0, 1] similarity
+                count_sim = 1.0 - min(abs(cell_count - i_count) / max(i_count, 1), 1.0)
+                size_sim = 1.0 - min(abs(cell_size - i_size) / max(i_size, 1), 1.0)
+                nuc_sim = 1.0 - min(abs(nucleus_ratio - i_nuc) / max(i_nuc, 0.01), 1.0)
+                blast_sim = 1.0 - min(abs(blast_pct - i_blast) / max(i_blast, 1.0), 1.0)
+                color_ratio = (blue_intensity + 0.01) / (red_intensity + 0.01)
+                color_sim = 1.0 - min(abs(color_ratio - i_color) / max(i_color, 0.01), 1.0)
 
-            # Lymphoma: medium cells, clumped (nucleus_ratio moderate)
-            if 14 < cell_size < 22:
-                scores["Lymphoma"] += 0.3
-            if 0.40 < nucleus_ratio < 0.58:
-                scores["Lymphoma"] += 0.3
-            # Low neutrophil analog = lymphocyte dominance
-            if nucleus_ratio > 0.40 and cell_size < 24:
-                scores["Lymphoma"] += 0.2
+                # Weighted combination
+                scores[cls_name] = (
+                    count_sim * 0.10 +
+                    size_sim * 0.30 +
+                    nuc_sim * 0.25 +
+                    blast_sim * 0.25 +
+                    color_sim * 0.10
+                )
 
-            # Myeloma: eccentric nuclei (nucleus_ratio ~0.40), moderate cells
-            if 12 < cell_size < 18:
-                scores["Myeloma"] += 0.2
-            if 0.35 < nucleus_ratio < 0.48:
-                scores["Myeloma"] += 0.3
-            if cell_count < 20 and cell_size > 11:
-                scores["Myeloma"] += 0.15
+            sorted_classes = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+            best_class, best_score = sorted_classes[0]
+            second_score = sorted_classes[1][1] if len(sorted_classes) > 1 else 0
 
-            # Normal: small cells, low nucleus ratio, many cells
-            if cell_size < 14:
-                scores["Normal"] += 0.4
-            if nucleus_ratio < 0.35:
-                scores["Normal"] += 0.4
-            if cell_count > 18:
-                scores["Normal"] += 0.3
-            if blast_pct < 5:
-                scores["Normal"] += 0.2
+            # Margin = how much better the top class is vs the second
+            margin = best_score - second_score
 
-            max_score = max(scores.values())
-            prediction = max(scores, key=scores.get)
-            # Normalize confidence
-            confidence = min(max_score * 0.85 + 0.15, 0.85)
+            # If the top score is low OR margin is very small, be uncertain
+            if best_score < 0.25 or margin < 0.02:
+                # "Uncertain" — return Normal with lower confidence
+                prediction = "Normal"
+                confidence = 0.45 + best_score * 0.3
+            else:
+                prediction = best_class
+                # Confidence: base (0.4) + how good the match is (score * 0.4) + how decisive (margin * 0.2)
+                confidence = 0.4 + best_score * 0.4 + min(margin * 2.0, 0.2)
+
+            confidence = min(max(confidence, 0.3), 0.85)
             return prediction, round(confidence, 4)
+
         except Exception as e:
             logger.warning(f"Feature-based fallback failed, using random: {e}")
 

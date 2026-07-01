@@ -166,6 +166,9 @@ def predict_from_image_cnn(image_path: str) -> tuple[str, float]:
     """Predict from blood smear image using the CNN model directly.
 
     Uses PIL for image loading (avoids deprecated keras.preprocessing.image).
+    Automatically detects model type by name:
+      - "hematoscan_cnn_pretrained" → has preprocess_input baked in → [0, 255]
+      - "hematoscan_cnn" → scratch CNN, trained on [0, 1] → [0, 1]
     Returns (label, confidence).
     Raises RuntimeError if CNN model is unavailable.
     """
@@ -174,12 +177,22 @@ def predict_from_image_cnn(image_path: str) -> tuple[str, float]:
         raise RuntimeError("CNN model not available")
 
     try:
-        from tensorflow import keras
         import numpy as np
         from PIL import Image
 
         pil_img = Image.open(image_path).convert("RGB").resize((224, 224))
-        img_array = np.array(pil_img, dtype=np.float32) / 255.0
+        img_array = np.array(pil_img, dtype=np.float32)
+
+        # Detect model type from name
+        is_pretrained = getattr(model, "name", "").endswith("_pretrained")
+
+        if is_pretrained:
+            # pretrained: preprocess_input is baked in, expects [0, 255]
+            pass  # keep raw [0, 255]
+        else:
+            # scratch: trained on [0, 1] data, expects [0, 1]
+            img_array = img_array / 255.0
+
         img_array = np.expand_dims(img_array, axis=0)
 
         probs = model.predict(img_array, verbose=0)[0]

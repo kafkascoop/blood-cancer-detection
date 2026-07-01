@@ -294,11 +294,12 @@ def load_tf_cnn() -> Optional[object]:
 def predict_tf_cnn(model: object, image_path: str) -> tuple[str, float]:
     """Run prediction on a single image using the TF CNN model.
 
+    Feeds [0, 255] input and lets the model handle normalization internally.
     Returns (label, confidence).
     """
     from PIL import Image
     img = Image.open(image_path).resize((IMG_SIZE, IMG_SIZE))
-    img_array = np.array(img, dtype=np.float32) / 255.0
+    img_array = np.array(img, dtype=np.float32)
     if img_array.ndim == 2:
         img_array = np.stack([img_array] * 3, axis=-1)
     img_array = np.expand_dims(img_array, axis=0)
