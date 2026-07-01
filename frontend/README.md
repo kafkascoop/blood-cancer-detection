@@ -114,6 +114,7 @@ The app will be available at **http://localhost:5173**.
 | `/blood-test` | Blood Test | ✅ | Enter 10 CBC parameters for AI prediction |
 | `/results` | Results | ✅ | Paginated results table with detail view |
 | `/history` | History | ✅ | Full history with search & filter |
+| `/activity-logs` | Activity Logs | ✅ | Filterable table of all API activity |
 | `/settings` | Settings | ✅ | App name & ML model mode configuration |
 
 **Protected routes** redirect to `/login` if the user is unauthenticated.  
@@ -166,6 +167,9 @@ const api = axios.create({
 | `getSettings()` | `GET /settings` | App settings |
 | `updateSettings()` | `PUT /settings` | Update settings |
 | `getDlStatus()` | `GET /settings/deep-learning-status` | DL framework status |
+| `getActivityLogs()` | `GET /activities` | List activity logs (with filters) |
+| `getActivityStats()` | `GET /activities/stats` | Activity log statistics |
+| `getActivityLogById()` | `GET /activities/{id}` | Single activity log |
 
 **Offline fallback:** If the backend is unavailable, pages fall back to mock data and local predictions, so the UI remains functional for demonstration purposes.
 
@@ -182,6 +186,7 @@ const api = axios.create({
 - **Prediction color coding** — color-coded badges and progress bars per prediction type
 - **Low-confidence warnings** — amber alert when confidence is below 70%
 - **Toast notifications** — PrimeReact Toast for success/error/info messages
+- **📋 Activity Logs** — filterable DataTable with method/status/date/endpoint filters, stats chips showing method distribution, and 30s auto-refresh on Dashboard widget
 
 ---
 

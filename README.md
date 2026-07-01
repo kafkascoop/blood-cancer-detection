@@ -43,9 +43,9 @@ blood-cancer-detection/
 │   └── ...
 ├── backend/           # FastAPI + MongoDB + ML
 │   ├── app/
-│   │   ├── routers/   # auth, predictions, results, dashboard, settings
-│   │   ├── services/  # auth, model_service (ML), prediction (fallback logic)
-│   │   ├── models/    # Pydantic schemas (user, detection)
+│   │   ├── routers/   # auth, predictions, results, dashboard, settings, activities
+│   │   ├── services/  # auth, model_service (ML), prediction (fallback), activity_logger
+│   │   ├── models/    # Pydantic schemas (user, detection, activity)
 │   │   ├── ml/        # Training pipelines, synthetic data generation, trained models
 │   │   ├── config.py  # Environment-based configuration
 │   │   └── database.py# MongoDB connection (Motor async driver)
@@ -183,6 +183,9 @@ Base URL: `http://localhost:8000`
 | `GET` | `/api/settings` | Get app settings | Yes |
 | `PUT` | `/api/settings` | Update app settings | Yes |
 | `GET` | `/api/settings/deep-learning-status` | Check DL framework status | Yes |
+| `GET` | `/api/activities` | List activity logs (with filters) | Yes |
+| `GET` | `/api/activities/stats` | Get activity log statistics | Yes |
+| `GET` | `/api/activities/{id}` | Get single activity log | Yes |
 
 Full interactive documentation at **http://localhost:8000/docs** (Swagger UI).
 
@@ -251,17 +254,20 @@ blood-cancer-detection/
 │   │   ├── seed.py                 # Demo user seeder
 │   │   ├── models/                 # Pydantic schemas
 │   │   │   ├── user.py             # UserCreate, UserLogin, UserResponse
-│   │   │   └── detection.py        # BloodTestData, DetectionResponse, Stats
+│   │   │   ├── detection.py        # BloodTestData, DetectionResponse, Stats
+│   │   │   └── activity.py         # ActivityLogEntry, ActivityLogResponse, ActivityLogStats
 │   │   ├── routers/                # API route handlers
 │   │   │   ├── auth.py             # Register, login, logout
 │   │   │   ├── predictions.py      # Image upload & blood test analysis
 │   │   │   ├── results.py          # Detection history
 │   │   │   ├── dashboard.py        # Stats & charts data
-│   │   │   └── settings.py         # App configuration
+│   │   │   ├── settings.py         # App configuration
+│   │   │   └── activities.py       # Activity log queries & stats
 │   │   ├── services/               # Business logic
 │   │   │   ├── auth.py             # Password hashing, JWT creation
 │   │   │   ├── model_service.py    # ML model loading & inference
-│   │   │   └── prediction.py       # Prediction routing & fallbacks
+│   │   │   ├── prediction.py       # Prediction routing & fallbacks
+│   │   │   └── activity_logger.py  # Auto-logging middleware (all API calls)
 │   │   └── ml/                     # Machine learning
 │   │       ├── data.py             # Synthetic data & image feature extraction
 │   │       ├── train.py            # scikit-learn training pipeline
@@ -286,6 +292,7 @@ blood-cancer-detection/
 │   │   │   ├── BloodTest.tsx       # CBC form & analysis
 │   │   │   ├── Results.tsx         # Detailed results viewer
 │   │   │   ├── History.tsx         # Full detection history
+│   │   │   ├── ActivityLogs.tsx    # Filterable activity log viewer
 │   │   │   └── Settings.tsx        # App & model configuration
 │   │   ├── components/             # Reusable UI
 │   │   ├── utils/
@@ -354,9 +361,10 @@ cd backend && source .venv/bin/activate
 ### Database
 
 - MongoDB indexes are created **automatically** on application startup
-- Collections: `users`, `detections`, `settings`
+- Collections: `users`, `detections`, `settings`, `activity_logs`
 - Users indexed by `email` (unique, sparse) and `username` (unique)
 - Detections indexed by `user_id` + `created_at`
+- Activity logs indexed by `created_at`, `method`, `status_code`, `user_id`, with **90-day TTL auto-expiry**
 
 ---
 
@@ -381,6 +389,8 @@ cd backend && source .venv/bin/activate
 - **⚙️ Settings:** Customize app name and model prediction mode (Auto/CNN/OpenCV)
 - **💡 Multiple ML Models:** Random Forest, Gradient Boosting, and optional CNN (TensorFlow)
 - **🔄 Smart Fallback:** Automatic fallback to rule-based prediction if models are unavailable
+- **📋 Activity Logging:** Automatic middleware captures all API calls with method, endpoint, status, duration, and user attribution. Filterable UI with method/status/date/endpoint filters, stats aggregation, and 30s auto-refresh on Dashboard
+- **🗑️ Auto-cleanup:** 90-day TTL index on MongoDB automatically expires old activity logs
 - **📁 Offline-ready:** Works with mock data when backend is unavailable
 
 ---

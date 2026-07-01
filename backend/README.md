@@ -219,6 +219,27 @@ Interactive docs at `http://localhost:8000/docs` (Swagger UI).
 }
 ```
 
+### Activity Logs (`/api/activities`)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/activities` | List activity logs (with filters) | Yes |
+| GET | `/api/activities/stats` | Get aggregated log statistics | Yes |
+| GET | `/api/activities/{id}` | Get a single log entry | Yes |
+
+**Query parameters for list:** `method`, `status_code`, `endpoint` (regex), `date_from`, `date_to`, `user_only`, `limit` (default: 50), `skip`
+
+**Stats Response:**
+```json
+{
+  "total_logs": 1250,
+  "method_counts": { "GET": 800, "POST": 350, "PUT": 60, "DELETE": 40 },
+  "status_code_counts": { "2xx Success": 1100, "4xx Client Error": 120, "5xx Server Error": 30 },
+  "endpoint_counts": { "/api/auth/me": 200, "/api/dashboard": 150, ... },
+  "monthly_logs": [90, 85, 110, ...]
+}
+```
+
 ---
 
 ## ML Model Training
@@ -339,9 +360,10 @@ curl http://localhost:8000/docs
 
 ### Database
 - MongoDB indexes are created automatically on startup
-- Collections: `users`, `detections`
+- Collections: `users`, `detections`, `activity_logs`
 - Users have unique indexes on `email` and `username`
 - Detections are indexed by `user_id` + `created_at`
+- Activity logs are indexed by `created_at`, `method`, `status_code`, `user_id`, with 90-day TTL auto-expiry
 
 ---
 

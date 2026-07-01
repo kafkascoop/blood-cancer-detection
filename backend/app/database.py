@@ -79,10 +79,10 @@ async def connect_db():
         await activities.create_index([("method", 1), ("created_at", -1)])
         await activities.create_index([("status_code", 1), ("created_at", -1)])
         await activities.create_index("user_id")
-        # TTL index: auto-delete logs older than 180 days
+        # TTL index: auto-delete logs older than 90 days
         await activities.create_index(
             "created_at",
-            expireAfterSeconds=180 * 24 * 3600,
+            expireAfterSeconds=90 * 24 * 3600,
         )
 
         # Ensure settings collection exists with default
