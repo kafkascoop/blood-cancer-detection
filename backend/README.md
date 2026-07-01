@@ -66,7 +66,7 @@ backend/
 
 ### 1. Prerequisites
 
-- Python 3.14+
+- Python 3.11+
 - MongoDB running locally (default: `mongodb://localhost:27017`)
 
 ### 2. Environment Setup

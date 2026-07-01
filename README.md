@@ -68,7 +68,7 @@ blood-cancer-detection/
 
 ### Prerequisites
 
-- **Python 3.12+** (3.14 recommended)
+- **Python 3.11**
 - **Node.js 20+**
 - **MongoDB** running locally (default: `mongodb://localhost:27017`)
 
